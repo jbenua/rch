@@ -3,7 +3,7 @@ import unittest
 
 from copy import deepcopy
 
-from nest import group_by_key
+from .nest import group_by_key
 
 
 ITEMS = [
