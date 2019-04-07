@@ -10,13 +10,13 @@ try:
 except ImportError:
     from yaml import Loader
 
-from task1.nest import group_by_key
+from ..task1.nest import group_by_key
 
 
 path = Path('.').resolve()
 app = Flask(__name__)
 
-with open(f'{path}/../etc/config.yaml') as config:
+with open(f'{path}/etc/config.yaml') as config:
     app.config.update(yaml.load(config.read(), Loader=Loader))
 
 basic_auth = BasicAuth(app)
