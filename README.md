@@ -11,13 +11,11 @@ pip install -r requirements.txt
 ```
 green
 ```
-
 or
 
 ```
 python -m tasks.task1.tests
 python -m tasks.task2.tests
-
 ```
 
 
@@ -27,4 +25,12 @@ python -m tasks.task2.tests
 ```cat data.json |  python tasks/task1/nest.py country```
 
 ### Task 2
+Run app:
 ```FLASK_APP=tasks/task2/app.py python -m flask run```
+
+### Task 3
+Set up db:
+```mysql [...db credentials] < dump.sql```
+
+Run app:
+```FLASK_APP=tasks/task3/app.py python -m flask run```
