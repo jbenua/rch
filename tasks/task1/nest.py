@@ -19,8 +19,11 @@ def group_items(items, nest_keys, rest_keys):
         if rest:
             res[key] = group_items(values, nest_keys, rest)
         else:
-            res[key] = [{k: v[k] for k in v if k not in nest_keys}
-                        for v in values]
+            res[key] = list(
+                filter(lambda x: x, [{k: v[k] for k in v if k not in nest_keys}
+                                     for v in values]))
+            if not res[key]:
+                return key
     return res
 
 

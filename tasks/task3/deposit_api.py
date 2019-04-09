@@ -1,20 +1,24 @@
 import json
 
-from flask import Blueprint, request, current_app
+from flask import Blueprint, request
 from flask.views import MethodView
 
+from flask_mysqldb import MySQL
+
 from ..task1.nest import group_by_key
-
-
 deposit_api = Blueprint('deposit_api', __name__)
-db = current_app.config.db
+db = MySQL()
+
+
+# TODO: it is a better practice to set a `deleted` flag
+# instead of actually deleting rows
+# with model we should also filter out `deleted=1` rows in queries
 
 
 @deposit_api.route('', methods=["GET"])
 def list_deposits():
     """List all depostis"""
-    # when using a `deleted` flag model,
-    # we should also filter deposits to check it is not deleted
+    data = []
     with db.connection.cursor() as cursor:
         cursor.execute('''
             SELECT currency, country, city, amount
@@ -22,30 +26,34 @@ def list_deposits():
         ''')
         res = cursor.fetchall()
         if res:
-            return json.dumps({
-                "status": "OK",
-                "data": [
-                    dict(zip(
-                        ['currency', 'country', 'city', 'amount'],
-                        item
-                    )) for item in res]
-            })
+            data = [
+                dict(zip(
+                    ['currency', 'country', 'city', 'amount'],
+                    item
+                )) for item in res]
+    return json.dumps({
+        "status": "OK",
+        "data": data
+    })
 
 
 @deposit_api.route('', methods=["POST"])
 def create():
     """Create a deposit"""
-    # when using a `deleted` flag model, unique key should also contain it
     # TODO validate post data
     with db.connection.cursor() as cursor:
         try:
             cursor.execute('''
                 INSERT INTO deposits
                 (currency, country, city)
-                VALUES (%(currency)s, %(country)s, %(city)s)
-            ''', request.json)
+                VALUES (%s, %s, %s)
+            ''', (
+                request.json['currency'],
+                request.json['country'],
+                request.json['city'],)
+            )
         except Exception as e:
-            return json.dumps({"status": "Error", "message": str(e)})
+            return (json.dumps({"status": "Error", "message": str(e)}), 400,)
         inserted_id = cursor.lastrowid
     db.connection.commit()
     return json.dumps({"status": "OK", "data": {"id": inserted_id}})
@@ -60,15 +68,16 @@ def nest():
         "nesting_keys": ["key1", "key2", ...]
     } ->  {...}  # nested obj
     """
-    data = group_by_key(request.json['data'], request.json['nesting_keys'])
+    try:
+        data = group_by_key(request.json['data'], request.json['nesting_keys'])
+    except KeyError as e:
+        return (json.dumps({"status": "Error", "message": str(e)}), 400)
     return json.dumps({"status": "OK", "data": data})
 
 
 class DepositAPI(MethodView):
     def get(self, deposit_id):
         """Get deposit by id"""
-        # when using a `deleted` flag model,
-        # we should also filter deposits to check it is not deleted
         with db.connection.cursor() as cursor:
             cursor.execute('''
                 SELECT currency, country, city, amount
@@ -84,16 +93,24 @@ class DepositAPI(MethodView):
                         res
                     ))
                 })
-        # TODO catch no such row
+        return (json.dumps({
+            "status": "Error",
+            "message": "No such deposit"
+        }), 404,)
 
     def post(self, deposit_id):
         """Change deposit amount"""
-        # when using a `deleted` flag model,
-        # we should also filter deposits to check it is not deleted
         new_amount = request.json.get('amount')
-        if not new_amount or not isinstance(new_amount, int):
-            raise Exception
-            # todo return err
+        if new_amount is None:
+            return (json.dumps({
+                "status": "Error",
+                "message": "`amount` expected in post body"
+            }), 400,)
+        if not isinstance(new_amount, int):
+            return (json.dumps({
+                "status": "Error",
+                "message": "`amount should be integer"
+            }), 400,)
 
         with db.connection.cursor() as cursor:
             updated = cursor.execute('''
@@ -102,25 +119,25 @@ class DepositAPI(MethodView):
                 WHERE id=%s
             ''', (new_amount, deposit_id,))
             if not updated:
-                # todo catch no such item
-                raise Exception
+                return (json.dumps({
+                    "status": "Error",
+                    "message": "No deposits to update"
+                }), 400,)
         db.connection.commit()
         return json.dumps({"status": "OK"})
 
     def delete(self, deposit_id):
         """Delete deposit"""
-        # when using a `deleted` flag model,
-        # we should also filter deposits to check it is not deleted
-        db = current_app.config.db
         with db.connection.cursor() as cursor:
-            # it is much better practice to set a `deleted` flag but whatever
             updated = cursor.execute('''
                 DELETE FROM deposits
                 WHERE id=%s
             ''', (deposit_id,))
             if not updated:
-                # todo catch no such item
-                raise Exception
+                return (json.dumps({
+                    "status": "Error",
+                    "message": "No deposits to delete"
+                }), 400,)
         db.connection.commit()
         return json.dumps({"status": "OK"})
 

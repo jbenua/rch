@@ -97,6 +97,25 @@ class TestNest(unittest.TestCase):
         ), msg="Failed to group by the same key twice"
         )
 
+    def test_all_the_keys(self):
+        """Return data as is when passed empty array of nesting keys"""
+        self.assertEqual({
+            "USD": {
+                "US": {
+                    "Boston": 100
+                }
+            },
+            "EUR": {
+                "FR": {
+                    "Paris": 20,
+                    "Lyon": 11.4,
+                }
+            }
+        }, group_by_key(
+            ITEMS, ['currency', 'country', 'city', 'amount']),
+            msg="Didnt unnest properly"
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
