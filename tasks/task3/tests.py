@@ -13,16 +13,7 @@ except ImportError:
 
 
 from .app import app
-path = Path('.').resolve()
 
-
-app.config['TESTING'] = True
-app.config['WTF_CSRF_ENABLED'] = False
-app.config['DEBUG'] = False
-
-path = Path('.').resolve()
-with open(f'{path}/etc/task3_config.yaml') as config:
-    app.config.update(yaml.load(config.read(), Loader=Loader))
 VALID_CREDENTIALS = base64.b64encode(
     '{}:{}'.format(
         app.config['BASIC_AUTH_USERNAME'],
