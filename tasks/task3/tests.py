@@ -2,15 +2,8 @@ import base64
 import json
 import unittest
 import time
-from pathlib import Path
 from copy import deepcopy
 from flask_mysqldb import MySQL
-import yaml
-try:
-    from yaml import CLoader as Loader
-except ImportError:
-    from yaml import Loader
-
 
 from .app import app
 

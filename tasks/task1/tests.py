@@ -30,8 +30,8 @@ ITEMS = [
 
 def pop_random_keys(items):
     safe_items = deepcopy(items)
-    for item in safe_items:
-        item.pop(random.choice(list(item.keys())))
+    for index, item in enumerate(safe_items):
+        item.pop(list(item.keys())[index])
     return safe_items
 
 
